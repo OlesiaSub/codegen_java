@@ -5,7 +5,12 @@ import kotlin.random.Random
 
 data class Variable(val name: String, val type: VarType)
 
-data class Method(val name: String, val returnType: VarType, val body: String, val params: List<Variable>)
+data class Clazz(val name: String) {
+    val fields: MutableList<Field> = mutableListOf()
+    val methods: MutableList<Method> = mutableListOf()
+}
+
+data class Method(val name: String, val returnType: VarType, val body: String, val params: List<Variable>, val declaringClass: String)
 
 data class Field(val name: String, val type: VarType, val initialValue: String?)
 
@@ -35,8 +40,8 @@ fun ifStmt(cond: String) = "if ($cond)"
 fun forStmt(i: Variable, n: Variable, start: String) =
     "for (${vtMap[i.type]} ${i.name} = $start; ${i.name} < ${n.name}; ${i.name}++)"
 
-fun methodCall(methodName: String, assignTo: Variable, params: List<Variable>) =
-    "${vtMap[assignTo.type]} ${assignTo.name} = $methodName(${insertParams(params)})"
+fun methodCall(methodName: String, assignTo: Variable, params: List<Variable>, declaringClass: String) =
+    "${vtMap[assignTo.type]} ${assignTo.name} = $declaringClass.$methodName(${insertParams(params)})"
 
 fun returnStmtDefault(type: VarType): String {
     val value = getDefaultValue(type)

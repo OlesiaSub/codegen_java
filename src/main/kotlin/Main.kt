@@ -23,7 +23,6 @@ fun main(args: Array<String>) { // todo construct many cases
                 printTree(node, file.outputStream())
             }
         }
-        println("heh")
     }
 }
 

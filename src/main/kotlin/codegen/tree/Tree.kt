@@ -16,7 +16,6 @@ class Tree {
             heads.add(classNode)
             builder.buildClass(classNode)
         }
-        println("done")
     }
 
     data class Node(val type: Elem) {
