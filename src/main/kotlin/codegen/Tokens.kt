@@ -37,8 +37,8 @@ fun semicolon() = ";\n"
 
 fun ifStmt(cond: String) = "if ($cond)"
 
-fun forStmt(i: Variable, n: Variable, start: String) =
-    "for (${vtMap[i.type]} ${i.name} = $start; ${i.name} < ${n.name}; ${i.name}++)"
+fun forStmt(i: Variable, n: String, start: String) =
+    "for (${vtMap[i.type]} ${i.name} = $start; ${i.name} < $n; ${i.name}++)"
 
 fun methodCall(methodName: String, assignTo: Variable, params: List<Variable>, declaringClass: String) =
     "${vtMap[assignTo.type]} ${assignTo.name} = $declaringClass.$methodName(${insertParams(params)})"
@@ -71,31 +71,30 @@ fun generateFieldName(className: String): String {
     return name
 }
 
-fun generateVarName(methodName: String) = "var_${methodName}_${Random.nextInt(0, 10000)}"
+fun generateVarName(methodName: String) = "var_${methodName}_${rand(0, 10000)}"
 
 fun getRandomType(canBeVoid: Boolean = true): VarType {
     val types = mutableListOf(VarType.INT, VarType.LONG, VarType.FLOAT, VarType.BOOL, VarType.CHAR, VarType.STRING)
     if (canBeVoid) types.addAll(listOf(VarType.VOID, VarType.VOID))
-    return types[Random.nextInt(0, types.size)]
+    return types[rand(0, types.size)]
 }
 
 fun getDefaultValue(varType: VarType): String {
+    val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
     return when (varType) {
-        VarType.INT -> listOf("0", "24", "13", "134", "-12")[Random.nextInt(0, 5)]
-        VarType.LONG -> listOf("0L", "1354624L", "1314352L", "8888L", "-121245L")[Random.nextInt(0, 5)]
-        VarType.FLOAT -> listOf("0.00f", "24.24f", "58.00f", "124.90f", "2.23f")[Random.nextInt(0, 5)]
-        VarType.BOOL -> listOf("true", "false")[Random.nextInt(0, 2)]
-        VarType.CHAR -> listOf("'a'", "'b'", "'c'", "'d'", "'e'")[Random.nextInt(0, 5)]
-        VarType.STRING -> listOf(
-            "\"hello, world!\"",
-            "\"hehehe\"",
-            "\"StRiNg\"",
-            "\"next \n line\"",
-            "\"kill me please,,,\""
-        )[Random.nextInt(0, 5)]
+        VarType.INT -> rand(-1000, 2000).toString()
+        VarType.LONG -> Random.nextLong(3214L,136812497L).toString()
+        VarType.FLOAT -> "${(Random.nextFloat() * Random.nextInt(2435))}f"
+        VarType.BOOL -> Random.nextBoolean().toString()
+        VarType.CHAR -> "'${charPool[rand(0, charPool.size)]}'"
+        VarType.STRING -> "\"${(3..rand(5, 17))
+            .map { Random.nextInt(0, charPool.size).let { charPool[it] } }
+            .joinToString("")}\""
         VarType.VOID -> "void"
     }
 }
+
+fun rand(from: Int, to: Int) = Random.nextInt(from, to)
 
 private fun insertParams(params: List<Variable>): String {
     var res = ""

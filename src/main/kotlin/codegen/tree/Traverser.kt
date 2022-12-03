@@ -92,7 +92,7 @@ class Traverser(private val tree: Tree) {
                 }
                 if (methodsToCall.isEmpty()) return
                 else {
-                    val method = methodsToCall[Random.nextInt(0, methodsToCall.size)]
+                    val method = methodsToCall[rand(0, methodsToCall.size)]
                     val genChild = GenNode()
                     val variable = Variable(generateVarName(methodName), method.methodInfo!!.returnType)
                     val call =
@@ -116,19 +116,40 @@ class Traverser(private val tree: Tree) {
                 genChild.children.clear()
             }
 
+            Elem.FOR -> {
+                val genChild = GenNode()
+                val typee = listOf(VarType.INT, VarType.FLOAT, VarType.LONG)[rand(0, 3)]
+                val i = Variable(generateVarName(methodName), typee)
+                val n = getDefaultValue(i.type)
+                var start = ""
+                while (start > n || start.isEmpty()) {
+                    start = getDefaultValue(i.type)
+                }
+                val forStmt = forStmt(i, n, start)
+                genChild.text = forStmt + openFPar()
+                genNode.children.add(genChild)
+                current.children.forEach { processChild(it, type, genChild, methodName, classNode) }
+                val baos = ByteArrayOutputStream()
+                gatherIfBody(genChild, baos)
+                baos.write(closeFPar().toByteArray())
+                genChild.text = baos.toString(Charset.defaultCharset())
+                current.children.clear()
+                genChild.children.clear()
+            }
+
             else -> {}
         }
     }
 
     private fun constructCondition(classNode: GenClassNode): String {
-        if (Random.nextInt(0, 2) == 0) {
+        if (rand(0, 2) == 0) {
             classNode.classInfo!!.fields.shuffle()
             classNode.classInfo!!.fields.forEach {
                 return when (it.type) {
                     VarType.INT -> "${it.name} >= 15"
                     VarType.LONG -> "${it.name} > 35391L"
                     VarType.FLOAT -> "${it.name} < 21.5f"
-                    VarType.STRING -> "${it.name}.length() >= 5"
+                    VarType.STRING -> "${it.name}.length() >= 7"
                     VarType.BOOL -> it.name
                     VarType.CHAR -> "${it.name} < 'k'"
                     else -> "true"
@@ -141,7 +162,7 @@ class Traverser(private val tree: Tree) {
                     VarType.INT -> "${it.name}() > 23"
                     VarType.LONG -> "${it.name}() < 84391L"
                     VarType.FLOAT -> "${it.name}() >= 42.44f"
-                    VarType.STRING -> "${it.name}().length() < 7"
+                    VarType.STRING -> "${it.name}().length() < 12"
                     VarType.BOOL -> "${it.name}()"
                     VarType.CHAR -> "${it.name}() > 'g'"
                     else -> "true"
