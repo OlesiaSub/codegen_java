@@ -44,7 +44,7 @@ class TreeBuilder {
     }
 
     private fun buildIf(depth: Int): Tree.Node? {
-        return if (depth > MAX_DEPTH || rand(1, 5) > 2) {
+        return if (depth > MAX_DEPTH || rand(1, 6) > 2) {
             null
         } else {
             val node = Tree.Node(Elem.IF)

@@ -17,7 +17,7 @@ class Traverser(private val tree: Tree) {
             genNode.type = Elem.CLASS
             val list = heads.subList(0, idx).filterIsInstance<GenClassNode>()
             var parentClass: Clazz? = null
-            if (rand(0, 10) > -1 && list.isNotEmpty()) {
+            if (rand(0, 10) > 7 && list.isNotEmpty()) {
                 parentClass = list[rand(0, list.size)].classInfo
             }
             genNode.classInfo = Clazz(name, parentClass)
