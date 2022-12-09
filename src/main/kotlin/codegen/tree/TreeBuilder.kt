@@ -15,7 +15,7 @@ class TreeBuilder {
         println("H")
     }
 
-    private fun parseElem(elem: Elem, node: Tree.Node) {
+    private fun parseElem(elem: Elem, node: Tree.Node, depth: Int = 0) {
         val fieldsNum = rand(1, MAX_FIELDS)
         val methodsNum = rand(1, MAX_METHODS)
         val methodCallNum = rand(1, MAX_METHOD_CALLS)
@@ -26,10 +26,10 @@ class TreeBuilder {
             when (elem) {
                 Elem.FIELD -> if (i < fieldsNum) node.children.add(Tree.Node(elem))
                 Elem.METHOD -> if (i < methodsNum) node.children.add(buildMethod())
-                Elem.IF -> if (i < ifNum) buildIf(0)?.let { node.children.add(it) }
+                Elem.IF -> if (i < ifNum) buildIf(depth)?.let { node.children.add(it) }
                 Elem.VAR_DECL -> if (i < varDeclNum) node.children.add(Tree.Node(elem))
                 Elem.METHOD_CALL -> if (i < methodCallNum) node.children.add(Tree.Node(elem))
-                Elem.FOR -> if (i < forNum) buildFor(0)?.let { node.children.add(it) }
+                Elem.FOR -> if (i < forNum) buildFor(depth)?.let { node.children.add(it) }
 //                    Elem.RETURN -> node.children.add(Tree.Node(r))
                 else -> {}
             }
@@ -39,25 +39,26 @@ class TreeBuilder {
     private fun buildMethod(): Tree.Node {
         val node = Tree.Node(Elem.METHOD)
         rules[Elem.METHOD]?.forEach { parseElem(it, node) }
+        println()
         return node
     }
 
     private fun buildIf(depth: Int): Tree.Node? {
-        return if (depth >= MAX_DEPTH || rand(1, 5) > 2) {
+        return if (depth > MAX_DEPTH || rand(1, 5) > 2) {
             null
         } else {
             val node = Tree.Node(Elem.IF)
-            rules[Elem.IF]?.forEach { parseElem(it, node) }
+            rules[Elem.IF]?.forEach { parseElem(it, node, depth + 1) }
             node
         }
     }
 
     private fun buildFor(depth: Int): Tree.Node? {
-        return if (depth >= MAX_DEPTH || rand(1, 5) > 2) {
+        return if (depth > MAX_DEPTH || rand(1, 5) > 2) {
             null
         } else {
             val node = Tree.Node(Elem.FOR)
-            rules[Elem.FOR]?.forEach { parseElem(it, node) }
+            rules[Elem.FOR]?.forEach { parseElem(it, node, depth + 1) }
             node
         }
     }

@@ -5,18 +5,29 @@ import kotlin.random.Random
 
 data class Variable(val name: String, val type: VarType)
 
-data class Clazz(val name: String) {
+data class Clazz(val name: String, val parentClass: Clazz?) {
     val fields: MutableList<Field> = mutableListOf()
     val methods: MutableList<Method> = mutableListOf()
 }
 
-data class Method(val name: String, val returnType: VarType, val body: String, val params: List<Variable>, val declaringClass: String)
+data class Method(
+    val name: String,
+    val returnType: VarType,
+    val body: String,
+    val params: List<Variable>,
+    var declaringClass: String
+)
 
 data class Field(val name: String, val type: VarType, val initialValue: String?)
 
 private var classNamesCount = 0
 
-fun classDecl(className: String) = "public class $className"
+fun classDecl(className: String, parentClass: Clazz?) =
+    if (parentClass == null) {
+        "public class $className"
+    } else {
+        "public class $className extends ${parentClass.name}"
+    }
 
 fun generateClassName() = "Class_${classNamesCount++}"
 
@@ -80,16 +91,19 @@ fun getRandomType(canBeVoid: Boolean = true): VarType {
 }
 
 fun getDefaultValue(varType: VarType): String {
-    val charPool : List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+    val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
     return when (varType) {
         VarType.INT -> rand(-1000, 2000).toString()
-        VarType.LONG -> Random.nextLong(3214L,136812497L).toString()
+        VarType.LONG -> Random.nextLong(3214L, 136812497L).toString()
         VarType.FLOAT -> "${(Random.nextFloat() * Random.nextInt(2435))}f"
         VarType.BOOL -> Random.nextBoolean().toString()
         VarType.CHAR -> "'${charPool[rand(0, charPool.size)]}'"
-        VarType.STRING -> "\"${(3..rand(5, 17))
-            .map { Random.nextInt(0, charPool.size).let { charPool[it] } }
-            .joinToString("")}\""
+        VarType.STRING -> "\"${
+            (3..rand(5, 17))
+                .map { Random.nextInt(0, charPool.size).let { charPool[it] } }
+                .joinToString("")
+        }\""
+
         VarType.VOID -> "void"
     }
 }

@@ -3,7 +3,7 @@ package codegen.tree
 import codegen.CLASSES
 import codegen.Elem
 
-const val MAX_DEPTH = 4
+const val MAX_DEPTH = 3
 
 class Tree {
 

@@ -4,26 +4,33 @@ import codegen.*
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.nio.charset.Charset
-import kotlin.random.Random
 
 class Traverser(private val tree: Tree) {
 
     val heads: MutableList<GenNode> = mutableListOf()
 
     fun traverse() {
-        tree.heads.forEach { head ->
+        tree.heads.forEachIndexed { idx, head ->
             assert(head.type == Elem.CLASS)
             val genNode = GenClassNode()
             val name = generateClassName()
             genNode.type = Elem.CLASS
-            genNode.text = classDecl(name) + openFPar()
-            genNode.classInfo = Clazz(name)
+            val list = heads.subList(0, idx).filterIsInstance<GenClassNode>()
+            var parentClass: Clazz? = null
+            if (rand(0, 10) > -1 && list.isNotEmpty()) {
+                parentClass = list[rand(0, list.size)].classInfo
+            }
+            genNode.classInfo = Clazz(name, parentClass)
+            val actualMethods = parentClass?.methods
+            actualMethods?.forEach { it.declaringClass = name }
+            parentClass?.let { genNode.classInfo!!.methods.addAll(actualMethods!!) }
+            genNode.text = classDecl(name, parentClass) + openFPar()
             heads.add(genNode)
             buildClassBody(head, genNode, name)
         }
     }
 
-    fun buildClassBody(treeNode: Tree.Node, classNode: GenClassNode, className: String) {
+    private fun buildClassBody(treeNode: Tree.Node, classNode: GenClassNode, className: String) {
         treeNode.children.forEach { child ->
             when (child.type) {
                 Elem.METHOD -> {
@@ -86,17 +93,17 @@ class Traverser(private val tree: Tree) {
             }
 
             Elem.METHOD_CALL -> {
-                val methodsToCall = mutableListOf<GenMethodNode>()
-                heads.forEach { h ->
-                    h.children.filterIsInstance<GenMethodNode>().forEach { methodsToCall.add(it) }
+                val methodsToCall = mutableListOf<Method>()
+                heads.filterIsInstance<GenClassNode>().forEach { h ->
+                    h.classInfo?.methods?.forEach { methodsToCall.add(it) }
                 }
                 if (methodsToCall.isEmpty()) return
                 else {
                     val method = methodsToCall[rand(0, methodsToCall.size)]
                     val genChild = GenNode()
-                    val variable = Variable(generateVarName(methodName), method.methodInfo!!.returnType)
+                    val variable = Variable(generateVarName(methodName), method.returnType)
                     val call =
-                        methodCall(method.methodInfo!!.name, variable, listOf(), method.methodInfo!!.declaringClass)
+                        methodCall(method.name, variable, listOf(), method.declaringClass)
                     genChild.text = call + semicolon()
                     genNode.children.add(genChild)
                 }
