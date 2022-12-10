@@ -15,7 +15,7 @@ class TreeBuilder {
         println("H")
     }
 
-    private fun parseElem(elem: Elem, node: Tree.Node, depth: Int = 0) {
+    private fun parseElem(elem: Elem, node: Tree.Node, depth: Int = 0, from: Elem = Elem.CLASS) {
         val fieldsNum = rand(1, MAX_FIELDS)
         val methodsNum = rand(1, MAX_METHODS)
         val methodCallNum = rand(1, MAX_METHOD_CALLS)
@@ -30,7 +30,12 @@ class TreeBuilder {
                 Elem.VAR_DECL -> if (i < varDeclNum) node.children.add(Tree.Node(elem))
                 Elem.METHOD_CALL -> if (i < methodCallNum) node.children.add(Tree.Node(elem))
                 Elem.FOR -> if (i < forNum) buildFor(depth)?.let { node.children.add(it) }
-//                    Elem.RETURN -> node.children.add(Tree.Node(r))
+                Elem.RETURN -> {
+                    if (rand(0, 10) > 7 && (from == Elem.FOR || from == Elem.IF)) {
+                        node.children.add(Tree.Node(elem))
+                    }
+                    break
+                }
                 else -> {}
             }
         }
@@ -38,7 +43,7 @@ class TreeBuilder {
 
     private fun buildMethod(): Tree.Node {
         val node = Tree.Node(Elem.METHOD)
-        rules[Elem.METHOD]?.forEach { parseElem(it, node) }
+        rules[Elem.METHOD]?.shuffled()?.forEach { parseElem(it, node) }
         println()
         return node
     }
@@ -48,7 +53,7 @@ class TreeBuilder {
             null
         } else {
             val node = Tree.Node(Elem.IF)
-            rules[Elem.IF]?.forEach { parseElem(it, node, depth + 1) }
+            rules[Elem.IF]?.shuffled()?.forEach { parseElem(it, node, depth + 1, Elem.IF) }
             node
         }
     }
@@ -58,7 +63,7 @@ class TreeBuilder {
             null
         } else {
             val node = Tree.Node(Elem.FOR)
-            rules[Elem.FOR]?.forEach { parseElem(it, node, depth + 1) }
+            rules[Elem.FOR]?.shuffled()?.forEach { parseElem(it, node, depth + 1, Elem.FOR) }
             node
         }
     }

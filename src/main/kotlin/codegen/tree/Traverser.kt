@@ -20,7 +20,7 @@ class Traverser(private val tree: Tree) {
             if (rand(0, 10) > 7 && list.isNotEmpty()) {
                 parentClass = list[rand(0, list.size)].classInfo
             }
-            genNode.classInfo = Clazz(name, parentClass)
+            genNode.classInfo = Clazz(name, parentClass) // inheritance
             val actualMethods = parentClass?.methods
             actualMethods?.forEach { it.declaringClass = name }
             parentClass?.let { genNode.classInfo!!.methods.addAll(actualMethods!!) }
@@ -114,7 +114,10 @@ class Traverser(private val tree: Tree) {
                 val ifStmt = ifStmt(constructCondition(classNode))
                 genChild.text = ifStmt + openFPar()
                 genNode.children.add(genChild)
-                current.children.forEach { processChild(it, type, genChild, methodName, classNode) }
+                for (ch in current.children) {
+                    processChild(ch, type, genChild, methodName, classNode)
+                    if (ch.type == Elem.RETURN) break
+                }
                 val baos = ByteArrayOutputStream()
                 gatherIfBody(genChild, baos)
                 baos.write(closeFPar().toByteArray())
@@ -135,13 +138,24 @@ class Traverser(private val tree: Tree) {
                 val forStmt = forStmt(i, n, start)
                 genChild.text = forStmt + openFPar()
                 genNode.children.add(genChild)
-                current.children.forEach { processChild(it, type, genChild, methodName, classNode) }
+                for (ch in current.children) {
+                    processChild(ch, type, genChild, methodName, classNode)
+                    if (ch.type == Elem.RETURN) break
+                }
                 val baos = ByteArrayOutputStream()
                 gatherIfBody(genChild, baos)
                 baos.write(closeFPar().toByteArray())
                 genChild.text = baos.toString(Charset.defaultCharset())
                 current.children.clear()
                 genChild.children.clear()
+            }
+
+            Elem.RETURN -> {
+                val genChild = GenNode()
+//                val variable = Variable(generateVarName(methodName), getRandomType(false))
+                genChild.text = returnStmtDefault(type) + semicolon()
+                genNode.children.add(genChild)
+//                baos.write("${returnStmtDefault(type)}${semicolon()}".toByteArray())
             }
 
             else -> {}
