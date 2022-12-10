@@ -2,6 +2,9 @@ package codegen.tree
 
 import codegen.*
 
+/**
+ * Builds the tree using [Tree] representation
+ */
 class TreeBuilder {
     fun buildClass(classNode: Tree.Node) {
         val fieldsNum = rand(1, MAX_FIELDS)
@@ -16,7 +19,7 @@ class TreeBuilder {
     }
 
     private fun parseElem(elem: Elem, node: Tree.Node, depth: Int = 0, from: Elem = Elem.CLASS) {
-        val fieldsNum = rand(1, MAX_FIELDS)
+        val fieldsNum = rand(1, MAX_FIELDS) // random constraints generation
         val methodsNum = rand(1, MAX_METHODS)
         val methodCallNum = rand(1, MAX_METHOD_CALLS)
         val varDeclNum = rand(0, MAX_VAR_DECLS)

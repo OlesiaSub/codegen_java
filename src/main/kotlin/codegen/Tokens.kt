@@ -3,6 +3,10 @@ package codegen
 import java.util.*
 import kotlin.random.Random
 
+/**
+ * File with representation of [Elem]s and util functions for code generation
+ */
+
 data class Variable(val name: String, val type: VarType)
 
 data class Clazz(val name: String, val parentClass: Clazz?) {
@@ -90,6 +94,9 @@ fun getRandomType(canBeVoid: Boolean = true): VarType {
     return types[rand(0, types.size)]
 }
 
+/**
+ * Gets random value that corresponds to the provided type
+ */
 fun getDefaultValue(varType: VarType): String {
     val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
     return when (varType) {

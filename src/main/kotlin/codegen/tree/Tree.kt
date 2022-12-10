@@ -5,6 +5,10 @@ import codegen.Elem
 
 const val MAX_DEPTH = 3
 
+/**
+ * Builds basic tree representation of classes, hsa a limited amount of nodes
+ * The generated tree will be used as a scheme for the next generation step
+ */
 class Tree {
 
     private val builder = TreeBuilder()

@@ -1,9 +1,15 @@
 package codegen
 
+/**
+ * Types of elements in a basic tree
+ */
 enum class Elem {
     CLASS, FIELD, METHOD, IF, FOR, VAR_DECL, METHOD_CALL, RETURN
 }
 
+/**
+ * Declares which elements can be inserted into the body of the key element
+ */
 val rules = hashMapOf(
     Elem.CLASS to listOf(Elem.FIELD, Elem.METHOD),
     Elem.METHOD to listOf(Elem.IF, Elem.FOR, Elem.VAR_DECL, Elem.METHOD_CALL, Elem.RETURN),
