@@ -15,7 +15,6 @@ class TreeBuilder {
         for (i in 0 until methodsNum) {
             classNode.children.add(buildMethod())
         }
-        println("H")
     }
 
     private fun parseElem(elem: Elem, node: Tree.Node, depth: Int = 0, from: Elem = Elem.CLASS) {
@@ -47,7 +46,6 @@ class TreeBuilder {
     private fun buildMethod(): Tree.Node {
         val node = Tree.Node(Elem.METHOD)
         rules[Elem.METHOD]?.shuffled()?.forEach { parseElem(it, node) }
-        println()
         return node
     }
 

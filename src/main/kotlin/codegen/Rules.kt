@@ -18,7 +18,7 @@ val rules = hashMapOf(
 )
 
 enum class VarType {
-    INT, LONG, FLOAT, BOOL, CHAR, STRING, VOID // todo CUSTOM
+    INT, LONG, FLOAT, BOOL, CHAR, STRING//, VOID // todo CUSTOM
 }
 
 val vtMap = mapOf(
@@ -28,5 +28,5 @@ val vtMap = mapOf(
     VarType.BOOL to "boolean",
     VarType.CHAR to "char",
     VarType.STRING to "String",
-    VarType.VOID to "void"
+//    VarType.VOID to "void"
 )

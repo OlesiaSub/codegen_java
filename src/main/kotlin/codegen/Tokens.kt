@@ -90,7 +90,7 @@ fun generateVarName(methodName: String) = "var_${methodName}_${rand(0, 10000)}"
 
 fun getRandomType(canBeVoid: Boolean = true): VarType {
     val types = mutableListOf(VarType.INT, VarType.LONG, VarType.FLOAT, VarType.BOOL, VarType.CHAR, VarType.STRING)
-    if (canBeVoid) types.addAll(listOf(VarType.VOID, VarType.VOID))
+//    if (canBeVoid) types.addAll(listOf(VarType.VOID, VarType.VOID))
     return types[rand(0, types.size)]
 }
 
@@ -111,7 +111,7 @@ fun getDefaultValue(varType: VarType): String {
                 .joinToString("")
         }\""
 
-        VarType.VOID -> "void"
+//        VarType.VOID -> "void"
     }
 }
 

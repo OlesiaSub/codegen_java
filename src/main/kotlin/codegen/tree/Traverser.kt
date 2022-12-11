@@ -4,6 +4,7 @@ import codegen.*
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.nio.charset.Charset
+import kotlin.random.Random
 
 /**
  * Uses the tree to generate concrete code for each node
@@ -21,7 +22,7 @@ class Traverser(private val tree: Tree) {
             genNode.type = Elem.CLASS
             val list = heads.subList(0, idx).filterIsInstance<GenClassNode>()
             var parentClass: Clazz? = null
-            if (rand(0, 10) > 7 && list.isNotEmpty()) {
+            if (rand(0, 10) > 5 && list.isNotEmpty()) {
                 parentClass = list[rand(0, list.size)].classInfo
             }
             genNode.classInfo = Clazz(name, parentClass) // inheritance
@@ -119,7 +120,7 @@ class Traverser(private val tree: Tree) {
             Elem.IF -> { // todo add return statements into branches
                 val genChild = GenNode()
                 val ifStmt = ifStmt(constructCondition(classNode))
-                genChild.text = ifStmt + openFPar()
+                genChild.text = ifStmt + openFPar() // todo duplicated code
                 genNode.children.add(genChild)
                 for (ch in current.children) {
                     processChild(ch, type, genChild, methodName, classNode)
@@ -168,16 +169,18 @@ class Traverser(private val tree: Tree) {
     }
 
     private fun constructCondition(classNode: GenClassNode): String {
+        val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        val opsPool = listOf(">", "<", ">=", "<=", ">", "<", ">=", "<=", "!=")
         if (rand(0, 2) == 0) {
             classNode.classInfo!!.fields.shuffle()
             classNode.classInfo!!.fields.forEach {
                 return when (it.type) {
-                    VarType.INT -> "${it.name} >= 15"
-                    VarType.LONG -> "${it.name} > 35391L"
-                    VarType.FLOAT -> "${it.name} < 21.5f"
-                    VarType.STRING -> "${it.name}.length() >= 7"
+                    VarType.INT -> "${it.name} ${opsPool[rand(0, opsPool.size)]} ${rand(-1000, 2000)}"
+                    VarType.LONG -> "${it.name} ${opsPool[rand(0, opsPool.size)]} ${Random.nextLong(3214L, 136812497L)}"
+                    VarType.FLOAT -> "${it.name} ${opsPool[rand(0, opsPool.size)]} ${(Random.nextFloat() * Random.nextInt(2435))}"
+                    VarType.STRING -> "${it.name}.length() ${opsPool[rand(0, opsPool.size)]} ${rand(4, 15)}"
                     VarType.BOOL -> it.name
-                    VarType.CHAR -> "${it.name} < 'k'"
+                    VarType.CHAR -> "${it.name} ${opsPool[rand(0, opsPool.size)]} '${charPool[rand(0, charPool.size)]}'"
                     else -> "true"
                 }
             }
@@ -185,12 +188,12 @@ class Traverser(private val tree: Tree) {
             classNode.classInfo!!.methods.shuffle()
             classNode.classInfo!!.methods.forEach {
                return when (it.returnType) {
-                    VarType.INT -> "${it.name}() > 23"
-                    VarType.LONG -> "${it.name}() < 84391L"
-                    VarType.FLOAT -> "${it.name}() >= 42.44f"
-                    VarType.STRING -> "${it.name}().length() < 12"
+                    VarType.INT -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${rand(-1000, 2000)}"
+                    VarType.LONG -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${Random.nextLong(3214L, 136812497L)}"
+                    VarType.FLOAT -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${(Random.nextFloat() * Random.nextInt(2435))}"
+                    VarType.STRING -> "${it.name}().startsWith('${charPool[rand(0, charPool.size)]}')"
                     VarType.BOOL -> "${it.name}()"
-                    VarType.CHAR -> "${it.name}() > 'g'"
+                    VarType.CHAR -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} '${charPool[rand(0, charPool.size)]}'"
                     else -> "true"
                 }
             }
