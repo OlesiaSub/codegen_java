@@ -10,5 +10,6 @@ Currently, the following constructs are supported:
 * For loops
 * Method calls
 * Inheritance
+* Basic exceptions handling
 
 To customize samples generation see `UserConfiguration` class and set your own bounds.
