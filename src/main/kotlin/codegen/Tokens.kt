@@ -19,7 +19,8 @@ data class Method(
     val returnType: VarType,
     val body: String,
     val params: List<Variable>,
-    var declaringClass: String
+    var clazz: String,
+    val throws: Boolean = false
 )
 
 data class Field(val name: String, val type: VarType, val initialValue: String?)
@@ -36,9 +37,15 @@ fun classDecl(className: String, parentClass: Clazz?) =
 fun generateClassName() = "Class_${classNamesCount++}"
 
 // todo remove static
-fun methodDecl(method: Method) = "public static ${vtMap[method.returnType]} ${method.name}() {\n" +
-        method.body +
-        "}\n"
+fun methodDecl(method: Method, throws: Boolean = false) =
+    if (throws) {
+        "public static ${vtMap[method.returnType]} ${method.name}() throws RuntimeException {\n" +
+                method.body +
+                "}\n"
+    } else
+        "public static ${vtMap[method.returnType]} ${method.name}() {\n" +
+                method.body +
+                "}\n"
 
 fun fieldDecl(field: Field) = "public static ${vtMap[field.type]} ${field.name} = ${field.initialValue}"
 
@@ -55,14 +62,27 @@ fun ifStmt(cond: String) = "if ($cond)"
 fun forStmt(i: Variable, n: String, start: String) =
     "for (${vtMap[i.type]} ${i.name} = $start; ${i.name} < $n; ${i.name}++)"
 
-fun methodCall(methodName: String, assignTo: Variable, params: List<Variable>, declaringClass: String) =
-    "${vtMap[assignTo.type]} ${assignTo.name} = $declaringClass.$methodName(${insertParams(params)})"
+fun methodCall(method: Method, assignTo: Variable, params: List<Variable>) =
+    if (method.throws) {
+        if (rand(0, 5) > 2) {
+            Pair(
+                "try {\n" +
+                        "${vtMap[assignTo.type]} ${assignTo.name} = ${method.clazz}.${method.name}(${insertParams(params)});" +
+                        "\n} catch (Exception ignored) {}\n", false
+            )
+        } else {
+            Pair("${vtMap[assignTo.type]} ${assignTo.name} = ${method.clazz}.${method.name}(${insertParams(params)});", true)
+        }
+    } else
+        Pair("${vtMap[assignTo.type]} ${assignTo.name} = ${method.clazz}.${method.name}(${insertParams(params)});", false)
 
 fun returnStmtDefault(type: VarType): String {
     val value = getDefaultValue(type)
     return if (value == "void") "return"
     else "return ${getDefaultValue(type)}"
 }
+
+fun throwEx() = "throw new RuntimeException(\"reason\")" // todo other exceptions
 
 var methodNamesCountMap = mutableMapOf<Int, Int>() // class -> number of methods
 

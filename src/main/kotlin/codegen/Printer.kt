@@ -1,6 +1,6 @@
 package codegen
 
-import codegen.tree.GenNode
+import codegen.traverse.GenNode
 import java.io.OutputStream
 
 fun printTree(node: GenNode, outputStream: OutputStream) {

@@ -1,6 +1,7 @@
-package codegen.tree
+package codegen.traverse
 
 import codegen.*
+import scheme.Tree
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.nio.charset.Charset
@@ -27,7 +28,7 @@ class Traverser(private val tree: Tree) {
             }
             genNode.classInfo = Clazz(name, parentClass) // inheritance
             val actualMethods = parentClass?.methods
-            actualMethods?.forEach { it.declaringClass = name }
+            actualMethods?.forEach { it.clazz = name }
             parentClass?.let { genNode.classInfo!!.methods.addAll(actualMethods!!) }
             genNode.text = classDecl(name, parentClass) + openFPar()
             heads.add(genNode)
@@ -43,10 +44,10 @@ class Traverser(private val tree: Tree) {
                     genChild.type = Elem.METHOD
                     val type = getRandomType()
                     val methodName = generateMethodName(className)
-                    val methodBody = buildMethodBody(type, child, genChild, methodName, classNode)
-                    val method = Method(methodName, type, methodBody, listOf(), className)
+                    val (methodBody, throws) = buildMethodBody(type, child, genChild, methodName, classNode)
+                    val method = Method(methodName, type, methodBody, listOf(), className, throws)
                     genChild.methodInfo = method
-                    genChild.text = methodDecl(method)
+                    genChild.text = methodDecl(method, throws)
                     classNode.children.add(genChild)
                     classNode.classInfo!!.methods.add(method)
                 }
@@ -72,14 +73,15 @@ class Traverser(private val tree: Tree) {
         genNode: GenNode,
         methodName: String,
         classNode: GenClassNode
-    ): String {
-        node.children.forEach { ch -> processChild(ch, type, genNode, methodName, classNode) }
+    ): Pair<String, Boolean> {
+        val throws = mutableListOf(false)
+        node.children.forEach { ch -> processChild(ch, type, genNode, methodName, classNode, throws) }
         val baos = ByteArrayOutputStream()
         gatherMethodBody(genNode, baos)
         baos.write("${returnStmtDefault(type)}${semicolon()}".toByteArray())
         node.children.clear()
         genNode.children.clear()
-        return baos.toString(Charset.defaultCharset())
+        return Pair(baos.toString(Charset.defaultCharset()), throws[0])
     }
 
     /**
@@ -90,7 +92,8 @@ class Traverser(private val tree: Tree) {
         type: VarType,
         genNode: GenNode,
         methodName: String,
-        classNode: GenClassNode
+        classNode: GenClassNode,
+        throws: MutableList<Boolean> = mutableListOf()
     ) {
         when (current.type) {
             Elem.VAR_DECL -> {
@@ -110,21 +113,21 @@ class Traverser(private val tree: Tree) {
                     val method = methodsToCall[rand(0, methodsToCall.size)]
                     val genChild = GenNode()
                     val variable = Variable(generateVarName(methodName), method.returnType)
-                    val call =
-                        methodCall(method.name, variable, listOf(), method.declaringClass)
-                    genChild.text = call + semicolon()
+                    val (call, t) = methodCall(method, variable, listOf())
+                    genChild.text = call
+                    if (t) throws[0] = true
                     genNode.children.add(genChild)
                 }
             }
 
-            Elem.IF -> { // todo add return statements into branches
+            Elem.IF -> {
                 val genChild = GenNode()
                 val ifStmt = ifStmt(constructCondition(classNode))
                 genChild.text = ifStmt + openFPar() // todo duplicated code
                 genNode.children.add(genChild)
                 for (ch in current.children) {
-                    processChild(ch, type, genChild, methodName, classNode)
-                    if (ch.type == Elem.RETURN) break
+                    processChild(ch, type, genChild, methodName, classNode, throws)
+                    if (ch.type == Elem.RETURN || ch.type == Elem.EXCEPTION) break
                 }
                 val baos = ByteArrayOutputStream()
                 gatherIfBody(genChild, baos)
@@ -147,7 +150,7 @@ class Traverser(private val tree: Tree) {
                 genChild.text = forStmt + openFPar()
                 genNode.children.add(genChild)
                 for (ch in current.children) {
-                    processChild(ch, type, genChild, methodName, classNode)
+                    processChild(ch, type, genChild, methodName, classNode, throws)
                     if (ch.type == Elem.RETURN) break
                 }
                 val baos = ByteArrayOutputStream()
@@ -164,6 +167,13 @@ class Traverser(private val tree: Tree) {
                 genNode.children.add(genChild)
             }
 
+            Elem.EXCEPTION -> {
+                val genChild = GenNode()
+                genChild.text = throwEx() + semicolon()
+                genNode.children.add(genChild)
+                throws[0] = true
+            }
+
             else -> {}
         }
     }
@@ -171,7 +181,7 @@ class Traverser(private val tree: Tree) {
     private fun constructCondition(classNode: GenClassNode): String {
         val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
         val opsPool = listOf(">", "<", ">=", "<=", ">", "<", ">=", "<=", "!=")
-        if (rand(0, 2) == 0) {
+        if (rand(0, 2) < 3) {
             classNode.classInfo!!.fields.shuffle()
             classNode.classInfo!!.fields.forEach {
                 return when (it.type) {
@@ -191,7 +201,7 @@ class Traverser(private val tree: Tree) {
                     VarType.INT -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${rand(-1000, 2000)}"
                     VarType.LONG -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${Random.nextLong(3214L, 136812497L)}"
                     VarType.FLOAT -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${(Random.nextFloat() * Random.nextInt(2435))}"
-                    VarType.STRING -> "${it.name}().startsWith('${charPool[rand(0, charPool.size)]}')"
+                    VarType.STRING -> "${it.name}().startsWith(\"${charPool[rand(0, charPool.size)]}\")"
                     VarType.BOOL -> "${it.name}()"
                     VarType.CHAR -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} '${charPool[rand(0, charPool.size)]}'"
                     else -> "true"

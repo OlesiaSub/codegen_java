@@ -1,14 +1,17 @@
 import codegen.*
-import codegen.tree.Traverser
-import codegen.tree.Tree
+import codegen.traverse.Traverser
+import scheme.Tree
+import config.CLASSES
+import config.DEST_FOLDER
+import config.NUMBER_OF_CASES
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlin.io.path.outputStream
 
-// todo можно сделать базовый класс с рандомными методами и из него тоже дергать, чтобы было меньше рисков зациклиться
-
-fun main(args: Array<String>) { // todo construct many cases
+fun main(args: Array<String>) {
     for (i in 0 until NUMBER_OF_CASES) {
         init()
         val tree = Tree()
@@ -21,6 +24,7 @@ fun main(args: Array<String>) { // todo construct many cases
                 if (Files.exists(path)) Files.delete(path)
                 val file = Files.createFile(path)
                 printTree(node, file.outputStream())
+                Logger.getLogger("Main").log(Level.INFO, "Successfully generated Class_$i.java")
             }
         }
     }

@@ -1,5 +1,14 @@
-package codegen.tree
+package scheme
 
+import config.MAX_DEPTH
+import config.MAX_FIELDS
+import config.MAX_FORS
+import config.MAX_IFS
+import config.MAX_METHODS
+import config.MAX_METHOD_CALLS
+import config.MAX_VAR_DECLS
+import config.MIN_FIELDS
+import config.MIN_METHODS
 import codegen.*
 
 /**
@@ -7,8 +16,8 @@ import codegen.*
  */
 class TreeBuilder {
     fun buildClass(classNode: Tree.Node) {
-        val fieldsNum = rand(1, MAX_FIELDS)
-        val methodsNum = rand(1, MAX_METHODS)
+        val fieldsNum = rand(MIN_FIELDS, MAX_FIELDS)
+        val methodsNum = rand(MIN_METHODS, MAX_METHODS)
         for (i in 0 until fieldsNum) {
             classNode.children.add(Tree.Node(Elem.FIELD))
         }
@@ -20,7 +29,7 @@ class TreeBuilder {
     private fun parseElem(elem: Elem, node: Tree.Node, depth: Int = 0, from: Elem = Elem.CLASS) {
         val fieldsNum = rand(1, MAX_FIELDS) // random constraints generation
         val methodsNum = rand(1, MAX_METHODS)
-        val methodCallNum = rand(1, MAX_METHOD_CALLS)
+        val methodCallNum = rand(0, MAX_METHOD_CALLS)
         val varDeclNum = rand(0, MAX_VAR_DECLS)
         val ifNum = rand(0, MAX_IFS)
         val forNum = rand(0, MAX_FORS)
@@ -38,6 +47,12 @@ class TreeBuilder {
                     }
                     break
                 }
+                Elem.EXCEPTION -> {
+                    if (rand(0, 10) > 6 && (from == Elem.IF)) {
+                        node.children.add(Tree.Node(elem))
+                    }
+                    break
+                }
                 else -> {}
             }
         }
@@ -50,7 +65,7 @@ class TreeBuilder {
     }
 
     private fun buildIf(depth: Int): Tree.Node? {
-        return if (depth > MAX_DEPTH || rand(1, 6) > 2) {
+        return if (depth > MAX_DEPTH || rand(1, 6) > 3) {
             null
         } else {
             val node = Tree.Node(Elem.IF)
@@ -60,7 +75,7 @@ class TreeBuilder {
     }
 
     private fun buildFor(depth: Int): Tree.Node? {
-        return if (depth > MAX_DEPTH || rand(1, 5) > 2) {
+        return if (depth > MAX_DEPTH || rand(1, 5) > 3) {
             null
         } else {
             val node = Tree.Node(Elem.FOR)

@@ -1,6 +1,6 @@
-package codegen.tree
+package scheme
 
-import codegen.CLASSES
+import config.CLASSES
 import codegen.Elem
 
 /**
