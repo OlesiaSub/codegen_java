@@ -5,11 +5,11 @@ This tool generates relatively random Java code samples.
 Currently, the following constructs are supported:
 * Classes with fields and methods
 * Primitive types
-* Variables instantiation
-* If blocks
+* Variables instantiation and reuse
+* If-else blocks
 * For loops
 * Method calls
 * Inheritance
 * Basic exceptions handling
 
-To customize samples generation see `UserConfiguration` class and set your own bounds.
+To customize samples generation see `UserConfiguration` class and set your own bounds and output directory.
