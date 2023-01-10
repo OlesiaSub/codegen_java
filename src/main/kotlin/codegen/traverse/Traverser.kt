@@ -135,7 +135,25 @@ class Traverser(private val tree: Tree) {
                     if (ch.type == Elem.RETURN || ch.type == Elem.EXCEPTION) break
                 }
                 val baos = ByteArrayOutputStream()
-                gatherIfBody(genChild, baos)
+                gatherIfElseBody(genChild, baos)
+                baos.write(closeFPar().toByteArray())
+                genChild.text = baos.toString(Charset.defaultCharset())
+                current.children.clear()
+                genChild.children.clear()
+            }
+
+            Elem.ELSE -> {
+                val genChild = GenNode()
+                val elseStmt = elseStmt()
+                genChild.text = elseStmt + openFPar()
+                genNode.children.add(genChild)
+                for (ch in current.children) {
+                    processChild(ch, type, genChild, methodName, classNode, throws, depth + 1)
+                    availableVars.entries.removeAll { (_, v) -> v > depth }
+                    if (ch.type == Elem.RETURN || ch.type == Elem.EXCEPTION) break
+                }
+                val baos = ByteArrayOutputStream()
+                gatherIfElseBody(genChild, baos)
                 baos.write(closeFPar().toByteArray())
                 genChild.text = baos.toString(Charset.defaultCharset())
                 current.children.clear()
@@ -160,7 +178,7 @@ class Traverser(private val tree: Tree) {
                     if (ch.type == Elem.RETURN) break
                 }
                 val baos = ByteArrayOutputStream()
-                gatherIfBody(genChild, baos)
+                gatherIfElseBody(genChild, baos)
                 baos.write(closeFPar().toByteArray())
                 genChild.text = baos.toString(Charset.defaultCharset())
                 current.children.clear()
@@ -267,9 +285,9 @@ class Traverser(private val tree: Tree) {
         node.children.forEach { gatherMethodBody(it, outputStream) }
     }
 
-    private fun gatherIfBody(node: GenNode, outputStream: OutputStream) {
+    private fun gatherIfElseBody(node: GenNode, outputStream: OutputStream) {
         outputStream.write(node.text.toByteArray())
-        node.children.forEach { gatherIfBody(it, outputStream) }
+        node.children.forEach { gatherIfElseBody(it, outputStream) }
     }
 }
 

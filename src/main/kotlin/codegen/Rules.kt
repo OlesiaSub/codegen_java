@@ -4,7 +4,7 @@ package codegen
  * Types of elements in a basic tree
  */
 enum class Elem {
-    CLASS, FIELD, METHOD, IF, FOR, VAR_DECL, METHOD_CALL, RETURN, EXCEPTION
+    CLASS, FIELD, METHOD, IF, ELSE, FOR, VAR_DECL, METHOD_CALL, RETURN, EXCEPTION
 }
 
 /**
@@ -14,6 +14,7 @@ val rules = hashMapOf(
     Elem.CLASS to listOf(Elem.FIELD, Elem.METHOD),
     Elem.METHOD to listOf(Elem.IF, Elem.FOR, Elem.VAR_DECL, Elem.METHOD_CALL, Elem.RETURN),
     Elem.IF to listOf(Elem.IF, Elem.FOR, Elem.VAR_DECL, Elem.METHOD_CALL, Elem.RETURN, Elem.EXCEPTION),
+    Elem.ELSE to listOf(Elem.IF, Elem.FOR, Elem.VAR_DECL, Elem.METHOD_CALL, Elem.RETURN, Elem.EXCEPTION),
     Elem.FOR to listOf(Elem.IF, Elem.FOR, Elem.VAR_DECL, Elem.METHOD_CALL, Elem.RETURN)
 )
 

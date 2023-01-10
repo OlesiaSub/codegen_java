@@ -62,7 +62,9 @@ fun closeFPar() = "}\n"
 
 fun semicolon() = ";\n"
 
-fun ifStmt(cond: String) = "if $cond"
+fun ifStmt(cond: String) = "if $cond "
+
+fun elseStmt() = "else "
 
 fun forStmt(i: Variable, n: String, start: String) =
     "for (${if (!i.exists) vtMap[i.type]  + " " else ""} ${i.name} = $start; ${i.name} < $n; ${i.name}++)"

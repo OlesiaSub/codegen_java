@@ -37,7 +37,13 @@ class TreeBuilder {
             when (elem) {
                 Elem.FIELD -> if (i < fieldsNum) node.children.add(Tree.Node(elem))
                 Elem.METHOD -> if (i < methodsNum) node.children.add(buildMethod())
-                Elem.IF -> if (i < ifNum) buildIf(depth)?.let { node.children.add(it) }
+                Elem.IF -> {
+                    if (i < ifNum) buildIf(depth)?.let {iff ->
+                        node.children.add(iff)
+                        if (rand(0, 3) == 2) buildElse(depth)?.let { node.children.add(it) }
+                    }
+                }
+
                 Elem.VAR_DECL -> if (i < varDeclNum) node.children.add(Tree.Node(elem))
                 Elem.METHOD_CALL -> if (i < methodCallNum) node.children.add(Tree.Node(elem))
                 Elem.FOR -> if (i < forNum) buildFor(depth)?.let { node.children.add(it) }
@@ -47,12 +53,14 @@ class TreeBuilder {
                     }
                     break
                 }
+
                 Elem.EXCEPTION -> {
                     if (rand(0, 10) > 6 && (from == Elem.IF)) {
                         node.children.add(Tree.Node(elem))
                     }
                     break
                 }
+
                 else -> {}
             }
         }
@@ -70,6 +78,16 @@ class TreeBuilder {
         } else {
             val node = Tree.Node(Elem.IF)
             rules[Elem.IF]?.shuffled()?.forEach { parseElem(it, node, depth + 1, Elem.IF) }
+            node
+        }
+    }
+
+    private fun buildElse(depth: Int): Tree.Node? {
+        return if (depth > MAX_DEPTH || rand(1, 6) > 4) {
+            null
+        } else {
+            val node = Tree.Node(Elem.ELSE)
+            rules[Elem.ELSE]?.shuffled()?.forEach { parseElem(it, node, depth + 1, Elem.ELSE) }
             node
         }
     }
