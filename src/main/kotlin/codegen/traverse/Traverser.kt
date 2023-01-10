@@ -116,7 +116,6 @@ class Traverser(private val tree: Tree) {
                 else {
                     val method = methodsToCall[rand(0, methodsToCall.size)]
                     val genChild = GenNode()
-//                    val variable = Variable(generateVarName(methodName), method.returnType)
                     val variable = getVariable(methodName, method.returnType, depth)
                     val (call, t) = methodCall(method, variable, listOf())
                     genChild.text = call
@@ -146,7 +145,6 @@ class Traverser(private val tree: Tree) {
             Elem.FOR -> {
                 val genChild = GenNode()
                 val typee = listOf(VarType.INT, VarType.FLOAT, VarType.LONG)[rand(0, 3)]
-//                val i = Variable(generateVarName(methodName), typee)
                 val i = getVariable(methodName, typee, depth + 1)
                 val n = getDefaultValue(i.type)
                 var start = ""
@@ -203,10 +201,11 @@ class Traverser(private val tree: Tree) {
     private fun constructCondition(classNode: GenClassNode): String {
         val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
         val opsPool = listOf(">", "<", ">=", "<=", ">", "<", ">=", "<=", "!=")
-        if (rand(0, 2) < 3) {
+        val condPool = listOf("||", "&&", "|| !", "&& !")
+        if (rand(0, 2) == 1) {
             classNode.classInfo!!.fields.shuffle()
             classNode.classInfo!!.fields.forEach {
-                return when (it.type) {
+                var cond = when (it.type) {
                     VarType.INT -> "${it.name} ${opsPool[rand(0, opsPool.size)]} ${rand(-1000, 2000)}"
                     VarType.LONG -> "${it.name} ${opsPool[rand(0, opsPool.size)]} ${Random.nextLong(3214L, 136812497L)}"
                     VarType.FLOAT -> "${it.name} ${
@@ -221,11 +220,14 @@ class Traverser(private val tree: Tree) {
                     VarType.CHAR -> "${it.name} ${opsPool[rand(0, opsPool.size)]} '${charPool[rand(0, charPool.size)]}'"
                     else -> "true"
                 }
+                cond = "($cond)"
+                if (rand(0, 2) == 1) cond = "($cond ${condPool[rand(0, condPool.size)]} ${constructCondition(classNode)})"
+                return cond
             }
         } else {
             classNode.classInfo!!.methods.shuffle()
             classNode.classInfo!!.methods.forEach {
-                return when (it.returnType) {
+                var cond = when (it.returnType) {
                     VarType.INT -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${rand(-1000, 2000)}"
                     VarType.LONG -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${
                         Random.nextLong(
@@ -252,9 +254,12 @@ class Traverser(private val tree: Tree) {
 
                     else -> "true"
                 }
+                cond = "($cond)"
+                if (rand(0, 2) == 1) cond = "($cond ${condPool[rand(0, condPool.size)]} ${constructCondition(classNode)})"
+                return cond
             }
         }
-        return "true"
+        return "(true)"
     }
 
     private fun gatherMethodBody(node: GenNode, outputStream: OutputStream) {
@@ -272,7 +277,6 @@ open class GenNode {
     val children: MutableList<GenNode> = mutableListOf()
     var text = ""
     lateinit var type: Elem
-//    var methodInfo: Method? = null // супер костыль потому что мне нужна инфа о методе, если нода метод (лучше сделать отдельный класс!)
 }
 
 class GenMethodNode : GenNode() {

@@ -7,6 +7,11 @@ import kotlin.random.Random
  * File with representation of [Elem]s and util functions for code generation
  */
 
+/**
+ * Represents a variable.
+ * @param exists is true if this variable is a copy of an already defined variable
+ * @param available is true if this variable is available for usage (if not defined in 'try' block, etc
+ */
 data class Variable(val name: String, val type: VarType, var exists: Boolean, var available: Boolean = true)
 
 data class Clazz(val name: String, val parentClass: Clazz?) {
@@ -57,7 +62,7 @@ fun closeFPar() = "}\n"
 
 fun semicolon() = ";\n"
 
-fun ifStmt(cond: String) = "if ($cond)"
+fun ifStmt(cond: String) = "if $cond"
 
 fun forStmt(i: Variable, n: String, start: String) =
     "for (${if (!i.exists) vtMap[i.type]  + " " else ""} ${i.name} = $start; ${i.name} < $n; ${i.name}++)"
