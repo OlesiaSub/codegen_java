@@ -7,7 +7,7 @@ import kotlin.random.Random
  * File with representation of [Elem]s and util functions for code generation
  */
 
-data class Variable(val name: String, val type: VarType)
+data class Variable(val name: String, val type: VarType, var exists: Boolean, var available: Boolean = true)
 
 data class Clazz(val name: String, val parentClass: Clazz?) {
     val fields: MutableList<Field> = mutableListOf()
@@ -60,21 +60,22 @@ fun semicolon() = ";\n"
 fun ifStmt(cond: String) = "if ($cond)"
 
 fun forStmt(i: Variable, n: String, start: String) =
-    "for (${vtMap[i.type]} ${i.name} = $start; ${i.name} < $n; ${i.name}++)"
+    "for (${if (!i.exists) vtMap[i.type]  + " " else ""} ${i.name} = $start; ${i.name} < $n; ${i.name}++)"
 
 fun methodCall(method: Method, assignTo: Variable, params: List<Variable>) =
     if (method.throws) {
         if (rand(0, 5) > 2) {
+            if (!assignTo.exists) assignTo.available = false
             Pair(
                 "try {\n" +
-                        "${vtMap[assignTo.type]} ${assignTo.name} = ${method.clazz}.${method.name}(${insertParams(params)});" +
+                        "${if (!assignTo.exists) vtMap[assignTo.type] + " " else ""}${assignTo.name} = ${method.clazz}.${method.name}(${insertParams(params)});" +
                         "\n} catch (Exception ignored) {}\n", false
             )
         } else {
-            Pair("${vtMap[assignTo.type]} ${assignTo.name} = ${method.clazz}.${method.name}(${insertParams(params)});", true)
+            Pair("${if (!assignTo.exists) vtMap[assignTo.type] + " " else ""} ${assignTo.name} = ${method.clazz}.${method.name}(${insertParams(params)});", true)
         }
     } else
-        Pair("${vtMap[assignTo.type]} ${assignTo.name} = ${method.clazz}.${method.name}(${insertParams(params)});", false)
+        Pair("${if (!assignTo.exists) vtMap[assignTo.type] + " " else ""} ${assignTo.name} = ${method.clazz}.${method.name}(${insertParams(params)});", false)
 
 fun returnStmtDefault(type: VarType): String {
     val value = getDefaultValue(type)

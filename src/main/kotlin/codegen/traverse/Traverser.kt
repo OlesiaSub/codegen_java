@@ -14,6 +14,7 @@ import kotlin.random.Random
 class Traverser(private val tree: Tree) {
 
     val heads: MutableList<GenNode> = mutableListOf()
+    private val availableVars: MutableMap<Variable, Int> = mutableMapOf()
 
     fun traverse() {
         tree.heads.forEachIndexed { idx, head ->
@@ -40,6 +41,7 @@ class Traverser(private val tree: Tree) {
         treeNode.children.forEach { child ->
             when (child.type) {
                 Elem.METHOD -> {
+                    availableVars.clear()
                     val genChild = GenMethodNode()
                     genChild.type = Elem.METHOD
                     val type = getRandomType()
@@ -75,7 +77,7 @@ class Traverser(private val tree: Tree) {
         classNode: GenClassNode
     ): Pair<String, Boolean> {
         val throws = mutableListOf(false)
-        node.children.forEach { ch -> processChild(ch, type, genNode, methodName, classNode, throws) }
+        node.children.forEach { ch -> processChild(ch, type, genNode, methodName, classNode, throws, depth = 0) }
         val baos = ByteArrayOutputStream()
         gatherMethodBody(genNode, baos)
         baos.write("${returnStmtDefault(type)}${semicolon()}".toByteArray())
@@ -93,12 +95,14 @@ class Traverser(private val tree: Tree) {
         genNode: GenNode,
         methodName: String,
         classNode: GenClassNode,
-        throws: MutableList<Boolean> = mutableListOf()
+        throws: MutableList<Boolean> = mutableListOf(),
+        depth: Int = 0
     ) {
         when (current.type) {
             Elem.VAR_DECL -> {
                 val genChild = GenNode()
-                val variable = Variable(generateVarName(methodName), getRandomType(false))
+                val variable = Variable(generateVarName(methodName), getRandomType(false), false)
+                availableVars[variable] = depth
                 genChild.text = varDecl(variable) + semicolon()
                 genNode.children.add(genChild)
             }
@@ -112,7 +116,8 @@ class Traverser(private val tree: Tree) {
                 else {
                     val method = methodsToCall[rand(0, methodsToCall.size)]
                     val genChild = GenNode()
-                    val variable = Variable(generateVarName(methodName), method.returnType)
+//                    val variable = Variable(generateVarName(methodName), method.returnType)
+                    val variable = getVariable(methodName, method.returnType, depth)
                     val (call, t) = methodCall(method, variable, listOf())
                     genChild.text = call
                     if (t) throws[0] = true
@@ -126,7 +131,8 @@ class Traverser(private val tree: Tree) {
                 genChild.text = ifStmt + openFPar() // todo duplicated code
                 genNode.children.add(genChild)
                 for (ch in current.children) {
-                    processChild(ch, type, genChild, methodName, classNode, throws)
+                    processChild(ch, type, genChild, methodName, classNode, throws, depth + 1)
+                    availableVars.entries.removeAll { (_, v) -> v > depth }
                     if (ch.type == Elem.RETURN || ch.type == Elem.EXCEPTION) break
                 }
                 val baos = ByteArrayOutputStream()
@@ -140,7 +146,8 @@ class Traverser(private val tree: Tree) {
             Elem.FOR -> {
                 val genChild = GenNode()
                 val typee = listOf(VarType.INT, VarType.FLOAT, VarType.LONG)[rand(0, 3)]
-                val i = Variable(generateVarName(methodName), typee)
+//                val i = Variable(generateVarName(methodName), typee)
+                val i = getVariable(methodName, typee, depth + 1)
                 val n = getDefaultValue(i.type)
                 var start = ""
                 while (start > n || start.isEmpty()) {
@@ -150,7 +157,8 @@ class Traverser(private val tree: Tree) {
                 genChild.text = forStmt + openFPar()
                 genNode.children.add(genChild)
                 for (ch in current.children) {
-                    processChild(ch, type, genChild, methodName, classNode, throws)
+                    processChild(ch, type, genChild, methodName, classNode, throws, depth + 1)
+                    availableVars.entries.removeAll { (_, v) -> v > depth }
                     if (ch.type == Elem.RETURN) break
                 }
                 val baos = ByteArrayOutputStream()
@@ -178,6 +186,20 @@ class Traverser(private val tree: Tree) {
         }
     }
 
+
+    private fun getVariable(methodName: String, type: VarType, depth: Int): Variable {
+        return if (rand(0, 2) == 0 || availableVars.filter { it.value <= depth && it.key.type == type && it.key.available }.isEmpty()) {
+            val variable = Variable(generateVarName(methodName), type, false)
+            availableVars[variable] = depth
+            variable
+        } else {
+            val v = availableVars.filter { it.value <= depth && it.key.type == type && it.key.available }.toList().shuffled()[0].first
+            v.exists = true
+            println(v.name)
+            v
+        }
+    }
+
     private fun constructCondition(classNode: GenClassNode): String {
         val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
         val opsPool = listOf(">", "<", ">=", "<=", ">", "<", ">=", "<=", "!=")
@@ -187,7 +209,13 @@ class Traverser(private val tree: Tree) {
                 return when (it.type) {
                     VarType.INT -> "${it.name} ${opsPool[rand(0, opsPool.size)]} ${rand(-1000, 2000)}"
                     VarType.LONG -> "${it.name} ${opsPool[rand(0, opsPool.size)]} ${Random.nextLong(3214L, 136812497L)}"
-                    VarType.FLOAT -> "${it.name} ${opsPool[rand(0, opsPool.size)]} ${(Random.nextFloat() * Random.nextInt(2435))}"
+                    VarType.FLOAT -> "${it.name} ${
+                        opsPool[rand(
+                            0,
+                            opsPool.size
+                        )]
+                    } ${(Random.nextFloat() * Random.nextInt(2435))}"
+
                     VarType.STRING -> "${it.name}.length() ${opsPool[rand(0, opsPool.size)]} ${rand(4, 15)}"
                     VarType.BOOL -> it.name
                     VarType.CHAR -> "${it.name} ${opsPool[rand(0, opsPool.size)]} '${charPool[rand(0, charPool.size)]}'"
@@ -197,13 +225,31 @@ class Traverser(private val tree: Tree) {
         } else {
             classNode.classInfo!!.methods.shuffle()
             classNode.classInfo!!.methods.forEach {
-               return when (it.returnType) {
+                return when (it.returnType) {
                     VarType.INT -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${rand(-1000, 2000)}"
-                    VarType.LONG -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${Random.nextLong(3214L, 136812497L)}"
-                    VarType.FLOAT -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${(Random.nextFloat() * Random.nextInt(2435))}"
+                    VarType.LONG -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} ${
+                        Random.nextLong(
+                            3214L,
+                            136812497L
+                        )
+                    }"
+
+                    VarType.FLOAT -> "${it.name}() ${
+                        opsPool[rand(
+                            0,
+                            opsPool.size
+                        )]
+                    } ${(Random.nextFloat() * Random.nextInt(2435))}"
+
                     VarType.STRING -> "${it.name}().startsWith(\"${charPool[rand(0, charPool.size)]}\")"
                     VarType.BOOL -> "${it.name}()"
-                    VarType.CHAR -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} '${charPool[rand(0, charPool.size)]}'"
+                    VarType.CHAR -> "${it.name}() ${opsPool[rand(0, opsPool.size)]} '${
+                        charPool[rand(
+                            0,
+                            charPool.size
+                        )]
+                    }'"
+
                     else -> "true"
                 }
             }
